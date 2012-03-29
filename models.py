@@ -23,7 +23,7 @@ class Todo(Base):
     order = Column(Integer, primary_key=True)
     content = Column(String(256))
     done = Column(Boolean, default=False)
-    user = Column(Integer, ForeignKey('users.id')
+    user = Column(Integer, ForeignKey('users.id'))
 
     def toDict(self):
         todo = {
@@ -32,7 +32,7 @@ class Todo(Base):
             'content': self.content,
             'done': self.done
             }
-         return todo
+        return todo
 
 engine = create_engine('postgresql://' + USER + ':' + PASSWORD + '@localhost/todos')
 

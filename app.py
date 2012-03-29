@@ -2,6 +2,9 @@ import tornado.ioloop
 import tornado.httpserver
 import tornado.web
 
+from sqlalchemy.orm import scoped_session, sessionmaker
+from models import *
+
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
@@ -14,7 +17,14 @@ class Application(tornado.web.Application):
 
         tornado.web.Application.__init__(self, handlers, **settings)
 
-class MainHandler(tornado.web.RequestHandler):
+        self.db = scoped_session(sessionmaker(bind=engine))
+
+class BaseHandler(tornado.web.RequestHandler):
+    @property
+    def db(self):
+        return self.application.db
+
+class MainHandler(BaseHandler):
     def get(self):
         self.write("Hello World!")
 
