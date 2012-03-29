@@ -23,6 +23,7 @@ class Todo(Base):
     order = Column(Integer, primary_key=True)
     content = Column(String(256))
     done = Column(Boolean, default=False)
+    user = Column(Integer, ForeignKey('users.id')
 
     def toDict(self):
         todo = {
