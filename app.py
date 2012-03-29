@@ -28,7 +28,8 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
     def get(self):
         if self.get_cookie('todos') is None:
-            user = User()
+            remote_ip = self.request.remote_ip
+            user = User(remote_ip)
             self.db.add(user)
             self.commit()
             self.set_cookie('todos', user.session)
@@ -40,7 +41,7 @@ class RESTfulHandler(BaseHandler):
         user = self.db.query(User).filter_by(session=session_hash).first()
         query = self.db.query.filter(Todo.user == user)
         todos = []
-        for todo in query:
+        for todo in user.todos:
             todo.append(todo.toDict())
         todos = json.dumps(todos)
         self.write(todos)
@@ -50,7 +51,7 @@ class RESTfulHandler(BaseHandler):
         user = self.db.query(User).filter_by(session=session_hash).first()
         todo = json.loads(self.request.body)
         todo = Todo(order=todo['order'],
-                    content=todo['content']
+                    content=todo['content'],
                     done=todo['done'],
                     user=user)
         self.db.add(todo)
@@ -68,7 +69,7 @@ class RESTfulHandler(BaseHandler):
            todo.done = tmp['done']
            self.db.commit()
         else:
-            self.set_status(403)
+           self.set_status(403)
 
     def delete(self, id):
         session_hash = self.get_cookie('todos')

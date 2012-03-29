@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, c
 from sqlalchemy.orm import relationship
 
 from datetime import datetime
+from hashlib import md5
 
 from secret import *
 
@@ -15,6 +16,12 @@ class User(Base):
     session = Column(String(32))
     created_on = Column(DateTime, default=datetime.now())
     todos = relationship("Todo", backref="users")
+
+    def __init__(self, remote_ip):
+        session_hash = md5()
+        session_hash.update(remote_ip)
+        session_hash.update(str(time()*pow(10, 7)))
+        self.session = session_hash.hexdigest()
 
 class Todo(Base):
     __tablename__ = 'todos'
