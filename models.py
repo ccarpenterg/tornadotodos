@@ -25,6 +25,12 @@ class Todo(Base):
     done = Column(Boolean, default=False)
     user = Column(Integer, ForeignKey('users.id'))
 
+    def __init__(self, order=order, content=content, done=done, user=user):
+        self.order = order
+        self.content = content
+        self.done = done
+        self.user = user
+
     def toDict(self):
         todo = {
             'id': self.id,
