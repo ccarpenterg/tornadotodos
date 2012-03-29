@@ -9,6 +9,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
+            (r"/todos\/?([0-9]*)", RESTfulHandler),
         ]
 
         settings = dict(
@@ -26,6 +27,11 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class MainHandler(BaseHandler):
     def get(self):
+        if self.get_cookie('todos') is None:
+            user = User()
+            self.db.add(user)
+            self.commit()
+            self.set_cookie('todos', user.session)
         self.write("Hello World!")
 
 class RESTfulHandler(BaseHandler):
@@ -39,7 +45,7 @@ class RESTfulHandler(BaseHandler):
         todos = json.dumps(todos)
         self.write(todos)
 
-    def post(self):
+    def post(self, id):
         session_hash = self.get_cookie('todos')
         user = self.db.query(User).filter_by(session=session_hash).first()
         todo = json.loads(self.request.body)
@@ -51,6 +57,28 @@ class RESTfulHandler(BaseHandler):
         self.db.commit()
         todo = json.dumps(todo.toDict())
         self.write(todo)
+
+    def put(self, id):
+        session_hash = self.get_cookie('todos')
+        user = self.db.query(User).filter_by(session=session_hash).first()
+        todo = self.db.query.filter(Todo.id == id)
+        if todo is not None:
+           tmp = json.loads(self.request.body)
+           todo.content = tmp['content']
+           todo.done = tmp['done']
+           self.db.commit()
+        else:
+            self.set_status(403)
+
+    def delete(self, id):
+        session_hash = self.get_cookie('todos')
+        user = self.db.query(User).filter_by(session=session_hash).first()
+        todo = self.db.query.filter(Todo.id == id)
+        if todo is not None:
+            self.db.delete(todo)
+            self.commit()
+        else:
+            self.set_status(403)
 
 def main():
     http_server = tornado.httpserver.HTTPServer(Application())
