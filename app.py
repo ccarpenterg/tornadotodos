@@ -1,6 +1,7 @@
 import tornado.ioloop
 import tornado.httpserver
 import tornado.web
+import os, json
 
 from sqlalchemy.orm import scoped_session, sessionmaker
 from models import *
@@ -13,6 +14,8 @@ class Application(tornado.web.Application):
         ]
 
         settings = dict(
+            static_path=os.path.join(os.path.dirname(__file__), "static"),
+            template_path=os.path.join(os.path.dirname(__file__), "templates"),
             debug=True,
         )
 
@@ -31,18 +34,17 @@ class MainHandler(BaseHandler):
             remote_ip = self.request.remote_ip
             user = User(remote_ip)
             self.db.add(user)
-            self.commit()
+            self.db.commit()
             self.set_cookie('todos', user.session)
-        self.write("Hello World!")
+        self.render("index.html")
 
 class RESTfulHandler(BaseHandler):
     def get(self, id):
         session_hash = self.get_cookie('todos')
         user = self.db.query(User).filter_by(session=session_hash).first()
-        query = self.db.query.filter(Todo.user == user)
         todos = []
         for todo in user.todos:
-            todo.append(todo.toDict())
+            todos.append(todo.toDict())
         todos = json.dumps(todos)
         self.write(todos)
 
@@ -53,7 +55,7 @@ class RESTfulHandler(BaseHandler):
         todo = Todo(order=todo['order'],
                     content=todo['content'],
                     done=todo['done'],
-                    user=user)
+                    user=user.id)
         self.db.add(todo)
         self.db.commit()
         todo = json.dumps(todo.toDict())
@@ -62,22 +64,24 @@ class RESTfulHandler(BaseHandler):
     def put(self, id):
         session_hash = self.get_cookie('todos')
         user = self.db.query(User).filter_by(session=session_hash).first()
-        todo = self.db.query.filter(Todo.id == id)
+        todo = self.db.query(Todo).filter(Todo.id == id).filter(Todo.user == user.id).first()
         if todo is not None:
            tmp = json.loads(self.request.body)
            todo.content = tmp['content']
            todo.done = tmp['done']
            self.db.commit()
+           todo = json.dumps(todo.toDict())
+           self.write(todo)
         else:
            self.set_status(403)
 
     def delete(self, id):
         session_hash = self.get_cookie('todos')
         user = self.db.query(User).filter_by(session=session_hash).first()
-        todo = self.db.query.filter(Todo.id == id)
+        todo = self.db.query(Todo).filter(Todo.id == id).filter(Todo.user == user.id).first()
         if todo is not None:
             self.db.delete(todo)
-            self.commit()
+            self.db.commit()
         else:
             self.set_status(403)
 
