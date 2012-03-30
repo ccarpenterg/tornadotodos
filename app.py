@@ -3,6 +3,8 @@ import tornado.httpserver
 import tornado.web
 import os, json
 
+from datetime import datetime
+
 from sqlalchemy.orm import scoped_session, sessionmaker
 from models import *
 
@@ -35,7 +37,7 @@ class MainHandler(BaseHandler):
             user = User(remote_ip)
             self.db.add(user)
             self.db.commit()
-            self.set_cookie('todos', user.session)
+            self.set_cookie('todos', user.session, expires=datetime(2020, 1, 1))
         self.render("index.html")
 
 class RESTfulHandler(BaseHandler):
