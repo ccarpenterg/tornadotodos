@@ -7,6 +7,9 @@ Quick start
 -----------
 
 Clone the repo, `git clone git://github.com/ccarpenterg/tornadotodos.git`
+
 Create the database (Postgresql), `createdb todos`
+
 Run models.py to create the tables, `python models.py`
+
 Enjoy `python app.py`
